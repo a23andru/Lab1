@@ -8,11 +8,13 @@ class Program
         Hero hero = new Hero();
         while (hero.Location != "quit") // Game-loop, after each location the game comes back here and goes to the next
         {
+            Console.WriteLine("Press Enter to continue");
+            Console.ReadLine();
+            
             if (hero.Location == "newgame")
             {
                 NewGame(hero);
             }
-
             else if (hero.Location == "tableroom")
             {
                 TableRoom(hero);
@@ -58,13 +60,14 @@ class Program
                           "a knife and a key." +
                           "You can only pick up one of these items.");
         List<string> options = new List<string>();
-        options.Add("knife");         options.Add("key");        options.Add("neither");
-        AddNewItem(options, hero);
+        options.Add("knife");         options.Add("key");
+        ChooseItem(options, hero);
         
     }
 
-    static void AddNewItem(List<string> choices, Hero hero)
+    static void ChooseItem(List<string> choices, Hero hero) // TODO Maybe remove this
     {
+        choices.Add("neither");
         string newItem = "";
         string itemList = "";
         Console.Clear();
@@ -72,7 +75,10 @@ class Program
         {
             foreach (var item in choices) // Prints out the new items to look more nice
             {
-                // TODO fix grammar 1, 2 or 3
+                if (item != "neither")
+                {
+                    itemList += "the ";
+                }
                 itemList += item;
                 if (choices.IndexOf(item) == choices.Count-2) // Add an or when it's the 2nd to last item
                 {
@@ -83,15 +89,22 @@ class Program
                     itemList += ", ";
                 }
             }
-            newItem = Ask($"Which item would you like out of {itemList}?");
-            if (!choices.Contains(newItem)) // If the answer is not in "choices" it asks again
+
+            do
             {
-                Console.WriteLine("Please choose one of the given items");
-            }
-        } while (!AskYesOrNo($"Are you sure you would like {newItem}?") && !choices.Contains(newItem)); // You have to say yes to wanting the item and it needs to be a valid item to move on
-        Console.WriteLine($"You pick up the {newItem}");
+                newItem = Ask($"Which item would you like out of {itemList}?").Trim();
+                if (newItem.Contains(" "))
+                {
+                    newItem = newItem.Substring(newItem.IndexOf(" ")).Trim(); // Turns "the knife" into "knife"
+                }
+                if (!choices.Contains(newItem)) // If the answer is not in "choices" it asks again
+                {
+                    Console.WriteLine("Please choose one of the given items");
+                }
+            } while (!choices.Contains(newItem));
+        } while (!AskYesOrNo($"Are you sure you would like {newItem}?")); // You have to say yes to wanting the item and it needs to be a valid item to move on
+        Console.WriteLine($"You pick up {newItem}");
         hero.Items.Add(newItem);
-        Console.WriteLine("You pick up the key");
 
         hero.Location = "corridor";
     }
@@ -102,25 +115,22 @@ class Program
         Console.WriteLine("You exit the room and find yourself standing in a dark " + 
                           "hallway. You can either enter another room on your right " + 
                           "side, or continue down the hallway on your left.");
-        answer = Console.Readline();
-        if (answer == "right")
+        if (AskYesOrNo("Would you like to check the door on the right side?"))
         {
+            Console.WriteLine("You find yourself in front of a locked door");
             if (hero.Items.Contains("key"))
             {
+                Console.WriteLine("Using your key you open the locked room and enter it");
                 hero.Location = "lockedRoom";
                 hero.Items.Remove("key");
+                return;
             }
-            else
-            {
-                hero.Location = "thirdRoom";
-            }
+            Console.WriteLine("You cant open the door since you dont have the Key...");
         }
-        else if (answer == "left")
-        {
-            hero.Location = "thirdRoom";
-        }
+        Console.WriteLine("You continue down the corridor on your left");
+        hero.Location = "thirdRoom";
+        
     }
-
     static void LockedRoom(Hero hero)
     {
         Console.Clear();
@@ -132,7 +142,6 @@ class Program
             hero.Items.Remove("woodensword");
             hero.Items.Add("shinysword");
         }
-
         hero.Location = "thirdRoom";
     }
 
@@ -156,8 +165,7 @@ class Program
         }
         Console.WriteLine("You leave the corpse and continue into the \n" +
                           "next room.");
-        Console.Read();
-        hero.Location = "backOutside"
+        hero.Location = "backOutside";
     }
 
     static int RollD6()
@@ -177,6 +185,7 @@ class Program
                 case "no":
                     return false;
             }
+            Console.WriteLine("Please answer yes or no");
         }
     }
     static string Ask(string question)
@@ -185,7 +194,7 @@ class Program
         do
         {
             Console.WriteLine(question);
-            response = Console.ReadLine().Trim();
+            response = Console.ReadLine().Trim().ToLower();
         } while (response == "");
 
         return response;
