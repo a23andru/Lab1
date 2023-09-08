@@ -6,19 +6,20 @@ class Program
 {
     static void Main(string[] args)
     {
-        Console.WriteLine("Welcome to Text Adventure!");
+        Console.WriteLine("Welcome to Text Adventure!"); 
+        //Initiates the hero and the boss
         Hero hero = new Hero();
         Enemy boss = new Enemy("Minotaur", 250, 10);
         while (hero.Location != "quit") // Game-loop, after each location the game comes back here and goes to the next
         {
-            Console.WriteLine("Press Enter to continue");
+            Console.WriteLine("Press Enter to continue"); //makes sure no text is cleaned away too fast since rooms clear on entry
             Console.ReadLine();
             
-            if (hero.Location == "newgame")
+            if (hero.Location == "newGame")
             {
                 NewGame(hero);
             }
-            else if (hero.Location == "tableroom")
+            else if (hero.Location == "tableRoom")
             {
                 TableRoom(hero);
             }
@@ -65,18 +66,19 @@ class Program
         }
     }
 
-    static void NewGame(Hero hero)
+    static void NewGame(Hero hero) //lets user input a name for the hero and then starts the adventure
     {
         Console.Clear();
-        string name = "";
+        string name;
         do
         {
             name = Ask("What is your name?");
         } while (!AskYesOrNo($"So, {name} is your name?"));
 
         hero.Name = name;
-        hero.Location = "tableroom";
+        hero.Location = "tableRoom";
     }
+    
     static void TableRoom(Hero hero)
     {
         Console.Clear();
@@ -86,52 +88,42 @@ class Program
                           "In front of you is a stone table with two items on it, " +
                           "a knife and a key. " +
                           "You can only pick up one of these items.");
-        List<string> options = new List<string>();
-        options.Add("knife");         options.Add("key");
-        ChooseItem(options, hero);
         
-    }
-
-    static void ChooseItem(List<string> choices, Hero hero) // TODO improve this function
-    {
-        choices.Add("neither");
-        string newItem = "";
-        string itemList = "";
-        foreach (var item in choices) // Prints out the new items to look more nice
+        string answer;
+        do //Loops until the player chooses one of the three options, then add to inventory as necessary
         {
-            if (item != "neither")
+            answer = Ask("Would you like the knife, the key or neither?");
+            if (answer == "the knife" || answer == "knife")
             {
-                itemList += "the ";
-            }
-            itemList += item;
-            if (choices.IndexOf(item) == choices.Count-2) // Add an or when it's the 2nd to last item
-            {
-                itemList += " or ";
-            }
-            else if (choices.IndexOf(item) + 1 != choices.Count) // Prints out comma unless it's the last item
-            {
-                itemList += ", ";
-            }
-        }
-        do
-        {
-            do
-            {
-                newItem = Ask($"Which item would you like, {itemList}?").Trim();
-                if (newItem.Contains(" "))
+                if (AskYesOrNo("Are you sure you'd like the knife?"))
                 {
-                    newItem = newItem.Substring(newItem.IndexOf(" ")).Trim(); // Turns "the knife" into "knife"
+                    hero.Items.Add("knife");
+                    Console.WriteLine("You pick up the knife");
+                    hero.Location = "corridor";
                 }
-                if (!choices.Contains(newItem)) // If the answer is not in "choices" it asks again
+            }
+            else if (answer == "the key" || answer == "key")
+            {
+                if (AskYesOrNo("Are you sure you'd like the key?"))
                 {
-                    Console.WriteLine("Please choose one of the given items");
+                    hero.Items.Add("key");
+                    Console.WriteLine("You pick up the key");
+                    hero.Location = "corridor";
                 }
-            } while (!choices.Contains(newItem));
-        } while (!AskYesOrNo($"Are you sure you would like {newItem}?")); // You have to say yes to wanting the item and it needs to be a valid item to move on
-        Console.WriteLine($"You pick up {newItem}");
-        hero.Items.Add(newItem);
-
-        hero.Location = "corridor";
+            }
+            else if (answer == "neither")
+            {
+                if (AskYesOrNo("Are you sure you want neither of them?"))
+                {
+                    Console.WriteLine("you choose to leave both items behind");
+                    hero.Location = "corridor";
+                }
+            }
+            else
+            {
+            Console.WriteLine("Please choose a valid option");
+            }
+        } while (hero.Location == "tableRoom"); //loops until the hero leaves the room by picking a valid option
     }
 
     static void Corridor(Hero hero)
@@ -140,20 +132,24 @@ class Program
         Console.WriteLine("You exit the room and find yourself standing in a dark " + 
                           "hallway. You can either enter another room on your right " + 
                           "side, or continue down the hallway on your left.");
-        if (AskYesOrNo("Would you like to check the door on the right side?"))
+        
+        if (AskYesOrNo("Would you like to check the door on the right side?")) //option to check an extra room
         {
             Console.WriteLine("You find yourself in front of a locked door");
-            if (hero.Items.Contains("key"))
+            if (hero.Items.Contains("key")) //lets the player enter if they have the key
             {
                 Console.WriteLine("Using your key you open the locked room and enter it");
-                hero.Location = "lockedRoom";
                 hero.Items.Remove("key");
-                return;
+                hero.Location = "lockedRoom";
             }
-            Console.WriteLine("You cant open the door since you dont have the Key...");
+            else
+            {
+                Console.WriteLine("You cant open the door since you dont have the Key...");
+                Console.WriteLine("You continue down the corridor on your left");
+                hero.Location = "thirdRoom";
+            }
         }
-        Console.WriteLine("You continue down the corridor on your left");
-        hero.Location = "thirdRoom";
+        
         
     }
     static void LockedRoom(Hero hero)
@@ -161,8 +157,8 @@ class Program
         Console.Clear();
         Console.WriteLine("Inside the locked room " +
                           "you find a shiny sword!");
-        if (AskYesOrNo("Do you want it instead of " +
-                       "your wooden sword? "))
+        
+        if (AskYesOrNo("Do you want it instead of your wooden sword?")) // Lets the player exchange their old sword for a better one
         {
             hero.Items.Remove("woodensword");
             hero.Items.Add("shinysword");
@@ -178,10 +174,11 @@ class Program
         Console.WriteLine("You enter the room at the end of the corridor.\n" +
                           "On the floor before you lies a lifeless corpse.\n" +
                           "Its hand is clasped around something shiny.\n");
-        if (AskYesOrNo("Would you like to loot the body?"))
+        
+        if (AskYesOrNo("Would you like to loot the body?")) //looting the body has a chance of giving a beneficial item
         {
             Console.Clear();
-            if (RollD6() >= 3)
+            if (RollD6() >= 3) //67% chance to get the beneficial item
             {
                 Console.WriteLine("A warm feeling spreads over your body.");
                 hero.Items.Add("blessed amulet");
@@ -201,13 +198,15 @@ class Program
         bool doorOpen = false;
         Console.Clear();
         Console.WriteLine("You enter the room");
+        Console.WriteLine("You notice a big door at the opposite wall and a lever in the corner");
         
-        do
+        string answer;
+        do // the player has to solve the puzzle in the room before continuing
         {
-            Console.WriteLine("You notice a big door at the opposite wall and a lever in the corner");
-            string answer = Ask("Do you want to investigate the door or the lever?");
-            if ("the door".Contains(answer))
+            answer = Ask("Do you want to investigate the door or the lever?");
+            if (answer == "the door" || answer == "door")
             {
+                Console.Clear();
                 if (doorOpen)
                 {
                     Console.WriteLine("You open the door and exit the dungeon");
@@ -219,13 +218,14 @@ class Program
                     Console.WriteLine("you return to the start of the room");
                 }
             }
-            else if ("the lever".Contains(answer))
+            else if (answer == "the lever" || answer == "lever")
             {
+                Console.Clear();
                 Console.WriteLine("You walk over to the lever");
                 if (AskYesOrNo("Would you like to pull it?"))
                 {
                     Console.WriteLine("You hear a loud click sound coming from the door");
-                    doorOpen = !doorOpen;
+                    doorOpen = !doorOpen; //pulling multiple times will lock and unlock the door
                 }
                 else
                 {
@@ -235,18 +235,17 @@ class Program
             }
             else
             {
+                Console.Clear();
                 Console.WriteLine("please pick a valid choice");
-                Console.Read();
             }
-            Console.Clear();
-        } while (hero.Location != "backOutside");
+        } while (hero.Location == "exitRoom"); //loops until they manage to unlock and use the door
     }
 
     static void BackOutside(Hero hero, Enemy boss)
     {
         Console.Clear();
         Console.WriteLine("As you exit the dungeon you notice a minotaur charging towards you");
-        if (hero.Items.Contains("knife"))
+        if (hero.Items.Contains("knife")) //the player gets a chance to damage the boss in advance
         {
             if (AskYesOrNo("Would you like to throw your knife at the charging minotaur?"))
             {
@@ -258,10 +257,10 @@ class Program
         hero.Location = "bossFight";
     }
 
-    static void BossFight(Hero hero, Enemy boss) //TODO add amulet to combat
+    static void BossFight(Hero hero, Enemy boss)
     {
         Console.Clear();
-        Console.WriteLine($"You have {hero.Health}/100 HP");
+        Console.WriteLine($"You have {hero.Health}/100 HP"); //writes the hero's exact hp and a rough estimate for the boss
         if (boss.Health>=250/2)
         {
             Console.WriteLine($"The {boss.Name} is furious");
@@ -300,8 +299,8 @@ class Program
             Console.WriteLine($"The {boss.Name} is charging up its next attack");
         }
         
-        string move = Ask("Would you like to attack, dodge, jump or parry?");
-        while (!"AttackDodgeJumpParry".ToLower().Contains(move))
+        string move = Ask("Would you like to attack, dodge, jump or parry?"); //the player gets to choose what to do
+        while (!(move == "attack" || move == "dodge" || move == "jump" || move == "parry")) //checks so that the action is valid before continuing
         {
             Console.WriteLine("Please choose one of the given options");
             move = Ask("Would you like to attack, dodge, jump or parry?");
@@ -321,7 +320,7 @@ class Program
             }
         }
 
-        if (boss.Health <= 0)
+        if (boss.Health <= 0) //check if the boss is dead before it attacks
         {
             Console.WriteLine($"You've bested The {boss.Name}");
             hero.Location = "win";
@@ -358,11 +357,10 @@ class Program
                 hero.Health -= boss.Damage;
             }
         }
-
-
-        if (hero.Health <= 0)
+        
+        if (hero.Health <= 0) // check if the hero is dead
         {
-            if (hero.Items.Contains("blessed amulet"))
+            if (hero.Items.Contains("blessed amulet")) //if you have the blessed amulet you get another chance
             {
                 hero.Health = 50;
                 Console.WriteLine("As you're dying you feel the amulet reinvigorate you");
@@ -373,8 +371,7 @@ class Program
                 hero.Location = "lose";
             }
         }
-
-        boss.TurnCounter++;
+        boss.TurnCounter++; //increment the turn counter to track boss attack
     }
 
     static void Win(Hero hero)
@@ -391,13 +388,13 @@ class Program
         hero.Location = "gameOver";
     }
 
-    static void GameOver(Hero hero, Enemy boss)
+    static void GameOver(Hero hero, Enemy boss) //lets the player choose to play again
     {
         if (AskYesOrNo("Would you like to play again?")) // if yes reset the player and boss as necessary
         {
             hero.Health = 100;
             hero.Items = new List<string>();
-            hero.Location = "newgame";
+            hero.Location = "newGame";
 
             boss.Health = 250;
         }
@@ -407,11 +404,11 @@ class Program
         }
     }
 
-    static int RollD6()
+    static int RollD6() // returns a random number between 1 and 6
     {
         return new Random().Next() % 6 + 1;
     }
-    static bool AskYesOrNo(string question)
+    static bool AskYesOrNo(string question) //lets the player confirm a question/option/answer
     {
         while (true)
         {
@@ -427,7 +424,7 @@ class Program
             Console.WriteLine("Please answer yes or no");
         }
     }
-    static string Ask(string question)
+    static string Ask(string question) //asks a question and returns the answer trimmed and in lowercase
     {
         string response;
         do
@@ -440,15 +437,15 @@ class Program
     }
 }
 
-class Hero
+class Hero //the hero, saves relevant data
 {
     public string Name = "";
     public int Health = 100;
     public List<string> Items = new List<string>();
-    public string Location = "newgame";
+    public string Location = "newGame";
 }
 
-class Enemy
+class Enemy //generic enemy class, currently just used for the boss
 {
     public string Name;
     public int Health;
@@ -456,7 +453,7 @@ class Enemy
     public int Armor;
     public int TurnCounter = 0;
 
-    public Enemy(string Name, int Health, int Damage, int Armor = 0)
+    public Enemy(string Name, int Health, int Damage, int Armor = 0) //armor is optional
     {
         this.Name = Name;
         this.Health = Health;
